@@ -7,13 +7,13 @@ Add a product update feature that allows users to perform basic update actions (
 
 **Which AI tool would you choose and why?**
 
-Copilot would be where my comfort level and experience lies. At my prior company we used it exclusively, therefore it would be my initial goto for no other reason than that. I would definitely be open to leveraging other ai tools as need and curiosity dictate. 
+Copilot would be where my comfort level and experience lies. At my prior company we had to use it exclusively, therefore it would be my initial goto for no other reason than that. I would be open to and welcome leveraging other ai tools (Cursor would be interesting) as need and curiosity dictate.
 
 ## 2. Comprehensive Prompt
 
 **Write your complete prompt including context about the codebase architecture and any constraints:**
 
-NOTE: This text is NOT part of my prompt but to indicate I'm making the assumption that I'm leveraging the codebase to add additional methods to support bulk updates and not introducing the ability to do so with a file for example. So the changes begin within the existing code at the service layer and not with the addition of new code to support a bulk update REST endpoint for file uploads for example.
+NOTE: This text is NOT part of my prompt but to indicate I'm making the assumption that I'm leveraging the codebase to add additional methods to support bulk updates and not introducing the ability to do so via REST/with a file for example. So the changes begin within the existing code at the service layer and not with the addition of new code to support a bulk update REST endpoint for file uploads for example.
 
 Here's where my prompt begins:
 
@@ -24,14 +24,14 @@ The goal is to add service and repository methods that allow users to perform bu
 The generated output should include:
 
 * ProductService and ProductRepository Methods:
-    * updateProducts - accepts a list of products with their IDs and updated fields (name, price, category, available).
+    * updateProducts - accepts a list of products by ID and updated fields (name, price, category, available).
     * deleteProducts - accepts a list of product IDs to delete.
 
 * Validation:
     * Product IDs must already exist.
     * Price cannot be negative.
     * Category should be validated against a fixed/enumerated list (Electronics, Home Appliances, Apparel, Accessories, Home Decor, Office Supplies, Outdoor).
-        // Note this text is not part of prompt but a comment to indicate Category would ideally be its own managed Entity/Db Table/Data and validation would be done against the values in the Db, but I have refernced the above list for simplicity against the mock data as an example.
+        * NOTE: this text is not part of prompt but a comment to indicate Category would ideally be its own managed Entity/Db Table/Data and validation would be done against the values in the Db, but I have referenced the above mock data list for simplicity as an example.
 
 * Behavior:
     * Bulk update and delete should support both "all or nothing" and partial successes options.

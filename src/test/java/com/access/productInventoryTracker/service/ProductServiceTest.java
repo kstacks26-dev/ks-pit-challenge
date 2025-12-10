@@ -62,15 +62,13 @@ public class ProductServiceTest {
         List<ProductDTO> dtos = productService.getProductsByCategory("Electronics");
         // From the mock data there are 5 Electronics products
         assertEquals(5, dtos.size());
-        dtos.forEach(dto -> assertEquals("electronics", dto.getCategory()));
+        dtos.forEach(dto -> assertEquals("Electronics", dto.getCategory()));
     }
 
     @Test
-    public void getProductsByCategory_UnknownCategory_ReturnsEmpty() {
+    public void getProductsByCategory_UnknownCategory_ReturnsNoProducts() {
         List<ProductDTO> dtos = productService.getProductsByCategory("UnknownCategory");
-        // From the mock data there are 5 Electronics products
         assertEquals(0, dtos.size());
-        dtos.forEach(dto -> assertEquals("UnknownCategory", dto.getCategory()));
     }
 
     @Test

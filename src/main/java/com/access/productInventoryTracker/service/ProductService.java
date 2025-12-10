@@ -3,6 +3,7 @@ package com.access.productInventoryTracker.service;
 import com.access.productInventoryTracker.dto.ProductDTO;
 import com.access.productInventoryTracker.model.Product;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.access.productInventoryTracker.repository.ProductRepository;
@@ -23,7 +24,7 @@ public class ProductService {
             product.getId(),
             product.getName(),
             product.getPrice(),
-            product.getCategory().toLowerCase(),
+            product.getCategory(),
             product.isAvailable()
         );
     }
@@ -57,11 +58,13 @@ public class ProductService {
      * Returns an empty list if no products match the category.
      */
     public List<ProductDTO> getProductsByCategory(String category) {
-        // This was refactored to remove the flatMap and fix the negation '!' bug
-        return productRepository.findAll().stream()
-            .filter(p -> p.getCategory().equalsIgnoreCase(category))
-            .map(this::convertToDTO)
-            .collect(Collectors.toList());
+        // Handle null category gracefully using Optional; return empty list when category is null
+        return Optional.ofNullable(category)
+            .map(cat -> productRepository.findAll().stream()
+                .filter(p -> p.getCategory().equalsIgnoreCase(cat))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList()))
+            .orElse(List.of());
     }
 
     /**
