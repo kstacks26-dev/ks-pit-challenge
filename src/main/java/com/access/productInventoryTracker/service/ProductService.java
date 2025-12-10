@@ -38,11 +38,27 @@ public class ProductService {
 
     // Your filtering methods here...
 
+    /**
+     * Return all products whose price is between min and max, inclusive.
+     * If min &gt; max an empty list is returned.
+     */
+    public List<ProductDTO> getProductsByPriceRange(double min, double max) {
+        if (min > max) {
+            return List.of();
+        }
+
+        return productRepository.findAll().stream()
+            .filter(p -> p.getPrice() >= min && p.getPrice() <= max)
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+
     // AI Generated
     public List<ProductDTO> getProductsByCategory(String category) {
         return productRepository.findAll().stream()
             .flatMap(product -> {
-                if (!product.getCategory().equalsIgnoreCase(category)) {
+                // Resolved bug per README, removed '!' 
+                if (product.getCategory().equalsIgnoreCase(category)) {
                     return Stream.of(convertToDTO(product));
                 }
                 return Stream.empty();

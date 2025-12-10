@@ -9,11 +9,14 @@ import java.util.Arrays;
 import java.util.List;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
 
     @Mock
@@ -49,6 +52,51 @@ public class ProductServiceTest {
         when(productRepository.findAll()).thenReturn(mockProducts);
     }
 
-    // Your tests here...
+    @BeforeEach
+    public void beforeEach() {
+        setupMockProducts();
+    }
 
+    @Test
+    public void getProductsByCategory_ValidCategory_ReturnsProducts() {
+        List<ProductDTO> dtos = productService.getProductsByCategory("Electronics");
+        // From the mock data there are 5 Electronics products
+        assertEquals(5, dtos.size());
+        dtos.forEach(dto -> assertEquals("electronics", dto.getCategory()));
+    }
+
+    @Test
+    public void getProductsByCategory_UnknownCategory_ReturnsEmpty() {
+        List<ProductDTO> dtos = productService.getProductsByCategory("UnknownCategory");
+        // From the mock data there are 5 Electronics products
+        assertEquals(0, dtos.size());
+        dtos.forEach(dto -> assertEquals("UnknownCategory", dto.getCategory()));
+    }
+
+    @Test
+    public void getProductsByPriceRange_WithinRange_ReturnsProducts() {
+        double min = 100.0;
+        double max = 200.0;
+        List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
+        // From the mock data: Coffee Maker (100), Blender (150), Wall Art (120), Floor Rug (150), E-reader (200)
+        assertEquals(5, dtos.size());
+        dtos.forEach(dto -> {
+            double price = dto.getPrice();
+            boolean inRange = price >= min && price <= max;
+            if (!inRange) {
+                System.out.println("Out of range price: " + price);
+            }
+            assertEquals(true, inRange);
+        });
+    }
+
+    @Test
+    public void getProductsByPriceRange_OutsideRange_ReturnsNoProducts() {
+        double min = 0.01;
+        double max = 19.99;
+        List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
+        assertEquals(0, dtos.size());
+    }
+
+    
 }
