@@ -98,5 +98,21 @@ public class ProductServiceTest {
         assertEquals(0, dtos.size());
     }
 
+    @Test
+    public void getProductsByAvailability_Available_ReturnsOnlyAvailable() {
+        List<ProductDTO> dtos = productService.getProductsByAvailability(true);
+        // From mock data: 14 products are available
+        assertEquals(14, dtos.size());
+        dtos.forEach(dto -> assertEquals(true, dto.isAvailable()));
+    }
+
+    @Test
+    public void getProductsByAvailability_Unavailable_ReturnsOnlyUnavailable() {
+        List<ProductDTO> dtos = productService.getProductsByAvailability(false);
+        // From mock data: 6 products are unavailable
+        assertEquals(6, dtos.size());
+        dtos.forEach(dto -> assertEquals(false, dto.isAvailable()));
+    }
+
     
 }

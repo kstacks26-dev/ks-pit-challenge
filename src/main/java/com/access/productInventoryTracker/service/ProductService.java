@@ -4,7 +4,6 @@ import com.access.productInventoryTracker.dto.ProductDTO;
 import com.access.productInventoryTracker.model.Product;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.access.productInventoryTracker.repository.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -53,16 +52,26 @@ public class ProductService {
             .collect(Collectors.toList());
     }
 
-    // AI Generated
+    /**
+     * Return all products matching the specified category (case-insensitive).
+     * Returns an empty list if no products match the category.
+     */
     public List<ProductDTO> getProductsByCategory(String category) {
+        // This was refactored to remove the flatMap and fix the negation '!' bug
         return productRepository.findAll().stream()
-            .flatMap(product -> {
-                // Resolved bug per README, removed '!' 
-                if (product.getCategory().equalsIgnoreCase(category)) {
-                    return Stream.of(convertToDTO(product));
-                }
-                return Stream.empty();
-            })
+            .filter(p -> p.getCategory().equalsIgnoreCase(category))
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Return all products filtered by their availability status.
+     * @param available true to return available products, false for unavailable products
+     */
+    public List<ProductDTO> getProductsByAvailability(boolean available) {
+        return productRepository.findAll().stream()
+            .filter(p -> p.isAvailable() == available)
+            .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
 
