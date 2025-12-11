@@ -3,18 +3,19 @@ package com.access.productInventoryTracker.service;
 import com.access.productInventoryTracker.dto.ProductDTO;
 import com.access.productInventoryTracker.model.Product;
 import com.access.productInventoryTracker.repository.ProductRepository;
-
-import static org.mockito.Mockito.when;
-import java.util.Arrays;
-import java.util.List;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
@@ -49,7 +50,7 @@ public class ProductServiceTest {
             new Product(20L, "Camping Tent", 270.0, "Outdoor", false)
         );
 
-        when(productRepository.findAll()).thenReturn(mockProducts);
+        lenient().when(productRepository.findAll()).thenReturn(mockProducts);
     }
 
     @BeforeEach
@@ -58,21 +59,57 @@ public class ProductServiceTest {
     }
 
     @Test
-    public void getProductsByCategory_ValidCategory_ReturnsProducts() {
+    public void testGetProductsByAvailabilityAvailable() {
+        List<ProductDTO> dtos = productService.getProductsByAvailability(true);
+        // From mock data: 14 products are available
+        assertEquals(14, dtos.size());
+        dtos.forEach(dto -> assertEquals(true, dto.isAvailable(),
+            "All returned products should be available"));
+    }
+
+    @Test
+    public void testGetProductsByAvailabilityUnavailable() {
+        List<ProductDTO> dtos = productService.getProductsByAvailability(false);
+        // From mock data: 6 products are unavailable
+        assertEquals(6, dtos.size());
+        dtos.forEach(dto -> assertEquals(false, dto.isAvailable(),
+            "All returned products should be unavailable"));
+    }
+
+    @Test
+    public void testGetProductsByCategoryBugDemonstration() {
+        // This test demonstrates the inverted filter logic bug.
+        // When filtering for "Electronics", we expect 5 Electronics products,
+        // but the bug (! negation) returns ALL products EXCEPT Electronics.
         List<ProductDTO> dtos = productService.getProductsByCategory("Electronics");
-        // From the mock data there are 5 Electronics products
-        assertEquals(5, dtos.size());
+        
+        // BUG: Due to inverted logic (!equalsIgnoreCase), this returns NON-Electronics products (15 instead of 5)
+        // EXPECTED: 5 Electronics products
+        // ACTUAL: 15 non-Electronics products
+        assertEquals(5, dtos.size(), 
+            "Should return 5 Electronics products, but inverted filter logic returns the opposite");
+        
         dtos.forEach(dto -> assertEquals("Electronics", dto.getCategory()));
+
+        // Verify one other category..
+        dtos = productService.getProductsByCategory("Home Appliances");
+        // From the mock data there are 4 Home Appliances products
+        assertEquals(4, dtos.size());
+        dtos.forEach(dto -> assertEquals("Home Appliances", dto.getCategory()));
+
     }
 
     @Test
-    public void getProductsByCategory_UnknownCategory_ReturnsNoProducts() {
+    public void testGetProductsByCategoryUnknown() {
         List<ProductDTO> dtos = productService.getProductsByCategory("UnknownCategory");
-        assertEquals(0, dtos.size());
+        assertEquals(0, dtos.size(), "Unknown category should return empty list");
+
+        dtos = productService.getProductsByCategory("");
+        assertEquals(0, dtos.size(), "Blank category should return empty list");
     }
 
     @Test
-    public void getProductsByPriceRange_WithinRange_ReturnsProducts() {
+    public void testGetProductsByPriceRangeWithinRange() {
         double min = 100.0;
         double max = 200.0;
         List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
@@ -80,37 +117,33 @@ public class ProductServiceTest {
         assertEquals(5, dtos.size());
         dtos.forEach(dto -> {
             double price = dto.getPrice();
-            boolean inRange = price >= min && price <= max;
-            if (!inRange) {
-                System.out.println("Out of range price: " + price);
-            }
-            assertEquals(true, inRange);
+            assertEquals(true, price >= min && price <= max,
+                "Price " + price + " should be within range [" + min + ", " + max + "]");
         });
     }
 
     @Test
-    public void getProductsByPriceRange_OutsideRange_ReturnsNoProducts() {
+    public void testGetProductsByPriceRangeOutsideRange() {
         double min = 0.01;
         double max = 19.99;
         List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
         assertEquals(0, dtos.size());
     }
 
+    // The following tests require that 'lenient' be used for mocking in the setup since findAll isn't called.
+    // Could setup the mock data for each test that needs it (redundant) or combine these into existing tests that do call it 
+    // and enforce strictness but that breaks the granularity of the tests.
     @Test
-    public void getProductsByAvailability_Available_ReturnsOnlyAvailable() {
-        List<ProductDTO> dtos = productService.getProductsByAvailability(true);
-        // From mock data: 14 products are available
-        assertEquals(14, dtos.size());
-        dtos.forEach(dto -> assertEquals(true, dto.isAvailable()));
+    public void testGetProductsByPriceRangeInvalidRange() {
+        assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(200.0, 100.0));
     }
 
     @Test
-    public void getProductsByAvailability_Unavailable_ReturnsOnlyUnavailable() {
-        List<ProductDTO> dtos = productService.getProductsByAvailability(false);
-        // From mock data: 6 products are unavailable
-        assertEquals(6, dtos.size());
-        dtos.forEach(dto -> assertEquals(false, dto.isAvailable()));
+    public void testGetProductsByPriceRangeNegativePrice() {
+        assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(-10.0, 100.0),
+            "Should throw IllegalArgumentException for negative prices");
     }
 
-    
 }

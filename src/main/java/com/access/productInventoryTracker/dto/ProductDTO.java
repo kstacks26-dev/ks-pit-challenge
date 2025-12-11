@@ -1,18 +1,22 @@
 package com.access.productInventoryTracker.dto;
 
-public class ProductDTO {
-    private Long id;
-    private String name;
-    private double price;
-    private String category;
-    private boolean available;
+import java.util.Objects;
 
-    // Constructor, getters and setters
+/**
+ * Representation of a product.
+ */
+public class ProductDTO {
+    private final Long id;
+    private final String name;
+    private final double price;
+    private final String category;
+    private final boolean available;
+
     public ProductDTO(Long id, String name, double price, String category, boolean available) {
-        this.id = id;
-        this.name = name;
+        this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.name = Objects.requireNonNull(name, "name cannot be null");
         this.price = price;
-        this.category = category;
+        this.category = Objects.requireNonNull(category, "category cannot be null");
         this.available = available;
     }
 
@@ -34,5 +38,33 @@ public class ProductDTO {
 
     public boolean isAvailable() {
         return available;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ProductDTO that = (ProductDTO) obj;
+        return Double.compare(that.price, price) == 0 &&
+               available == that.available &&
+               Objects.equals(id, that.id) &&
+               Objects.equals(name, that.name) &&
+               Objects.equals(category, that.category);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, price, category, available);
+    }
+
+    @Override
+    public String toString() {
+        return "ProductDTO{" +
+               "id=" + id +
+               ", name='" + name + '\'' +
+               ", price=" + price +
+               ", category='" + category + '\'' +
+               ", available=" + available +
+               '}';
     }
 }
