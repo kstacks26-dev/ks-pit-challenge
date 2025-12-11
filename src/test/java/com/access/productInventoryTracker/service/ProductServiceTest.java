@@ -63,7 +63,7 @@ public class ProductServiceTest {
         List<ProductDTO> dtos = productService.getProductsByAvailability(true);
         // From mock data: 14 products are available
         assertEquals(14, dtos.size());
-        dtos.forEach(dto -> assertEquals(true, dto.isAvailable(),
+        dtos.forEach(dto -> assertEquals(true, dto.available(),
             "All returned products should be available"));
     }
 
@@ -72,7 +72,7 @@ public class ProductServiceTest {
         List<ProductDTO> dtos = productService.getProductsByAvailability(false);
         // From mock data: 6 products are unavailable
         assertEquals(6, dtos.size());
-        dtos.forEach(dto -> assertEquals(false, dto.isAvailable(),
+        dtos.forEach(dto -> assertEquals(false, dto.available(),
             "All returned products should be unavailable"));
     }
 
@@ -89,13 +89,13 @@ public class ProductServiceTest {
         assertEquals(5, dtos.size(), 
             "Should return 5 Electronics products, but inverted filter logic returns the opposite");
         
-        dtos.forEach(dto -> assertEquals("Electronics", dto.getCategory()));
+        dtos.forEach(dto -> assertEquals("Electronics", dto.category()));
 
         // Verify one other category..
         dtos = productService.getProductsByCategory("Home Appliances");
         // From the mock data there are 4 Home Appliances products
         assertEquals(4, dtos.size());
-        dtos.forEach(dto -> assertEquals("Home Appliances", dto.getCategory()));
+        dtos.forEach(dto -> assertEquals("Home Appliances", dto.category()));
 
     }
 
@@ -116,7 +116,7 @@ public class ProductServiceTest {
         // From the mock data: Coffee Maker (100), Blender (150), Wall Art (120), Floor Rug (150), E-reader (200)
         assertEquals(5, dtos.size());
         dtos.forEach(dto -> {
-            double price = dto.getPrice();
+            double price = dto.price();
             assertEquals(true, price >= min && price <= max,
                 "Price " + price + " should be within range [" + min + ", " + max + "]");
         });
