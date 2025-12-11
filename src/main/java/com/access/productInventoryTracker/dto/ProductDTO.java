@@ -9,6 +9,8 @@ public record ProductDTO(Long id, String name, double price, String category, bo
     public ProductDTO {
         Objects.requireNonNull(id, "id cannot be null");
         Objects.requireNonNull(name, "name cannot be null");
+        Objects.requireNonNull(price, "price cannot be null");
         Objects.requireNonNull(category, "category cannot be null");
+        Objects.requireNonNull(available, "available cannot be null");
     }
 }
