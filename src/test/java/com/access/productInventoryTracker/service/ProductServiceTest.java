@@ -146,4 +146,35 @@ public class ProductServiceTest {
             "Should throw IllegalArgumentException for negative prices");
     }
 
+    // Additional tests for pagination by category
+    @Test
+    public void testGetProductsByCategoryPaginated() {
+        // page 0, size 2 -> first two Electronics (based on mock order)
+        List<ProductDTO> page0 = productService.getProductsByCategory("Electronics", 0, 2);
+        assertEquals(2, page0.size());
+        assertEquals("Laptop", page0.get(0).name());
+        assertEquals("Smartphone", page0.get(1).name());
+
+        // page 1, size 2 -> next two Electronics
+        List<ProductDTO> page1 = productService.getProductsByCategory("Electronics", 1, 2);
+        assertEquals(2, page1.size());
+        assertEquals("Speaker", page1.get(0).name());
+        assertEquals("E-reader", page1.get(1).name());
+    }
+
+    @Test
+    public void testGetProductsByCategoryPaginatedOutOfRange() {
+        // there are 5 electronics in mock data; page 3 with size 2 skips 6 -> empty
+        List<ProductDTO> page3 = productService.getProductsByCategory("Electronics", 3, 2);
+        assertEquals(0, page3.size());
+    }
+
+    @Test
+    public void testGetProductsByCategoryPaginatedInvalidParameters() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByCategory("Electronics", -1, 2));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByCategory("Electronics", 0, 0));
+    }
+
 }

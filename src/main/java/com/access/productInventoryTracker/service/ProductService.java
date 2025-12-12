@@ -87,6 +87,35 @@ public class ProductService {
     }
 
     /**
+     * Paginated version of category filter using stream pagination (skip/limit).
+     *
+     * @param category category to filter by (case-insensitive)
+     * @param page zero-based page index (must be >= 0)
+     * @param size page size (must be > 0)
+     * @return a page of ProductDTOs matching the category
+     * @throws IllegalArgumentException if page < 0 or size <= 0
+     */
+    public List<ProductDTO> getProductsByCategory(String category, int page, int size) {
+        if (page < 0) {
+            throw new IllegalArgumentException("page index must be >= 0");
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("size must be > 0");
+        }
+
+        long skip = (long) page * size;
+
+        return Optional.ofNullable(category)
+            .map(cat -> productRepository.findAll().stream()
+                .filter(p -> p.getCategory().equalsIgnoreCase(cat))
+                .skip(skip)
+                .limit(size)
+                .map(this::convertToDTO)
+                .collect(Collectors.toUnmodifiableList()))
+            .orElse(List.of());
+    }
+
+    /**
      * Filters products by availability status.
      *
      * @param available true to return available products, false to return unavailable products
