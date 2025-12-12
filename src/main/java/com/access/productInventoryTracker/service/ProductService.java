@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Service layer for product-related business operations.
  * Handles filtering, data transformation, and validation.
+ * Methods are provided for pagination as well.
  */
 @Service
 public class ProductService {
@@ -39,6 +40,48 @@ public class ProductService {
     }
 
     /**
+     * Generic helper that filters a collection of products with the provided predicate
+     * and maps results to DTOs using the existing conversion pattern.
+     *
+     * @param products  collection of products to filter
+     * @param predicate predicate to apply
+     * @return unmodifiable list of ProductDTO matching the predicate
+     */
+    private List<ProductDTO> filterProducts(java.util.Collection<Product> products, java.util.function.Predicate<Product> predicate) {
+        if (products == null) {
+            return List.of();
+        }
+
+        return products.stream()
+            .filter(predicate)
+            .map(this::convertToDTO)
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
+     * Generic helper that filters a collection of products with the provided predicate
+     * and maps results to DTOs using the existing conversion pattern and supports pagination.
+     *
+     * @param products  collection of products to filter
+     * @param predicate predicate to apply
+     * @param skip elements to skip 
+     * @param size number of elements to return
+     * @return unmodifiable list of ProductDTO matching the predicate
+     */
+    private List<ProductDTO> filterProducts(java.util.Collection<Product> products, java.util.function.Predicate<Product> predicate, long skip, long size) {
+        if (products == null) {
+            return List.of();
+        }
+
+        return products.stream()
+            .filter(predicate)
+            .skip(skip)
+            .limit(size)
+            .map(this::convertToDTO)
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
      * Retrieves all products.
      *
      * @return list of all ProductDTOs
@@ -50,39 +93,15 @@ public class ProductService {
     }
 
     /**
-     * Filters products by price range (inclusive).
-     * Validates that min is not greater than max.
-     *
-     * @param min the minimum price (inclusive)
-     * @param max the maximum price (inclusive)
-     * @return list of ProductDTOs within the specified price range
-     * @throws IllegalArgumentException if min is greater than max or prices are negative
-     */
-    public List<ProductDTO> getProductsByPriceRange(double min, double max) {
-        if (min < 0 || max < 0) {
-            throw new IllegalArgumentException("Price values cannot be negative. Received min=" + min + ", max=" + max);
-        }
-        if (min > max) {
-            throw new IllegalArgumentException("Minimum price (" + min + ") cannot exceed maximum price (" + max + ")");
-        }
-
-        // Intentionally not catching DataAccessExceptions in these methods
-        return productRepository.findAll().stream()
-            .filter(p -> p.getPrice() >= min && p.getPrice() <= max)
-            .map(this::convertToDTO)
-            .collect(Collectors.toUnmodifiableList());
-    }
-
-    /**
      * Return all products matching the specified category (case-insensitive).
      * Returns an empty list if no products match the category.
+     * 
+     * @param category category to filter by (case-insensitive)
      */
     public List<ProductDTO> getProductsByCategory(String category) {
+        // Intentionally not catching DataAccessExceptions in these methods as it's unnecessary IMO
         return Optional.ofNullable(category)
-            .map(cat -> productRepository.findAll().stream()
-                .filter(p -> p.getCategory().equalsIgnoreCase(cat))
-                .map(this::convertToDTO)
-                .collect(Collectors.toUnmodifiableList()))
+            .map(cat -> filterProducts(productRepository.findAll(), p -> p.getCategory().equalsIgnoreCase(cat)))
             .orElse(List.of());
     }
 
@@ -106,13 +125,57 @@ public class ProductService {
         long skip = (long) page * size;
 
         return Optional.ofNullable(category)
-            .map(cat -> productRepository.findAll().stream()
-                .filter(p -> p.getCategory().equalsIgnoreCase(cat))
-                .skip(skip)
-                .limit(size)
-                .map(this::convertToDTO)
-                .collect(Collectors.toUnmodifiableList()))
+            .map(cat -> filterProducts(productRepository.findAll(), p -> p.getCategory().equalsIgnoreCase(cat), skip, size))
             .orElse(List.of());
+    }
+
+    /**
+     * Filters products by price range (inclusive).
+     *
+     * @param min the minimum price (inclusive)
+     * @param max the maximum price (inclusive)
+     * @return list of ProductDTOs within the specified price range
+     * @throws IllegalArgumentException if min is greater than max or prices are negative
+     */
+    public List<ProductDTO> getProductsByPriceRange(double min, double max) {
+        if (min < 0 || max < 0) {
+            throw new IllegalArgumentException("Price values cannot be negative. Received min=" + min + ", max=" + max);
+        }
+        if (min > max) {
+            throw new IllegalArgumentException("Minimum price (" + min + ") cannot exceed maximum price (" + max + ")");
+        }
+
+        // Intentionally not catching DataAccessExceptions in these methods as it's unnecessary IMO
+        return filterProducts(productRepository.findAll(), p -> p.getPrice() >= min && p.getPrice() <= max);
+    }
+
+    /**
+     * Paginated version of price-range filter using stream pagination (skip/limit).
+     *
+     * @param min minimum price inclusive
+     * @param max maximum price inclusive
+     * @param page zero-based page index (must be >= 0)
+     * @param size page size (must be > 0)
+     * @return a page of ProductDTOs matching the price range
+     * @throws IllegalArgumentException if parameters are invalid
+     */
+    public List<ProductDTO> getProductsByPriceRange(double min, double max, int page, int size) {
+        if (min < 0 || max < 0) {
+            throw new IllegalArgumentException("Price values cannot be negative. Received min=" + min + ", max=" + max);
+        }
+        if (min > max) {
+            throw new IllegalArgumentException("Minimum price (" + min + ") cannot exceed maximum price (" + max + ")");
+        }
+        if (page < 0) {
+            throw new IllegalArgumentException("page index must be >= 0");
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("size must be > 0");
+        }
+
+        long skip = (long) page * size;
+
+        return filterProducts(productRepository.findAll(), p -> p.getPrice() >= min && p.getPrice() <= max, skip, size);
     }
 
     /**
@@ -122,9 +185,29 @@ public class ProductService {
      * @return list of ProductDTOs with the specified availability status
      */
     public List<ProductDTO> getProductsByAvailability(boolean available) {
-        return productRepository.findAll().stream()
-            .filter(p -> p.isAvailable() == available)
-            .map(this::convertToDTO)
-            .collect(Collectors.toUnmodifiableList());
+        return filterProducts(productRepository.findAll(), p -> p.isAvailable() == available);
     }
+
+    /**
+     * Paginated version of availability filter using stream pagination (skip/limit).
+     *
+     * @param available availability to filter by
+     * @param page zero-based page index (must be >= 0)
+     * @param size page size (must be > 0)
+     * @return a page of ProductDTOs matching the availability
+     * @throws IllegalArgumentException if page < 0 or size <= 0
+     */
+    public List<ProductDTO> getProductsByAvailability(boolean available, int page, int size) {
+        if (page < 0) {
+            throw new IllegalArgumentException("page index must be >= 0");
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("size must be > 0");
+        }
+
+        long skip = (long) page * size;
+
+        return filterProducts(productRepository.findAll(),p -> p.isAvailable() == available, skip, size);
+    }
+    
 }

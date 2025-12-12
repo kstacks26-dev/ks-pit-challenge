@@ -50,30 +50,15 @@ public class ProductServiceTest {
             new Product(20L, "Camping Tent", 270.0, "Outdoor", false)
         );
 
+        // There are a few tests that test edge cases and throw exceptions prior to findAll being called. 
+        // To avoid this, could setup the mock data for each test that needs it (redundant) or combine the test into existing tests 
+        // that do call it and enforce strictness but that breaks the granularity of the tests.
         lenient().when(productRepository.findAll()).thenReturn(mockProducts);
     }
 
     @BeforeEach
     public void beforeEach() {
         setupMockProducts();
-    }
-
-    @Test
-    public void testGetProductsByAvailabilityAvailable() {
-        List<ProductDTO> dtos = productService.getProductsByAvailability(true);
-        // From mock data: 14 products are available
-        assertEquals(14, dtos.size());
-        dtos.forEach(dto -> assertEquals(true, dto.available(),
-            "All returned products should be available"));
-    }
-
-    @Test
-    public void testGetProductsByAvailabilityUnavailable() {
-        List<ProductDTO> dtos = productService.getProductsByAvailability(false);
-        // From mock data: 6 products are unavailable
-        assertEquals(6, dtos.size());
-        dtos.forEach(dto -> assertEquals(false, dto.available(),
-            "All returned products should be unavailable"));
     }
 
     @Test
@@ -108,45 +93,7 @@ public class ProductServiceTest {
         assertEquals(0, dtos.size(), "Blank category should return empty list");
     }
 
-    @Test
-    public void testGetProductsByPriceRangeWithinRange() {
-        double min = 100.0;
-        double max = 200.0;
-        List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
-        // From the mock data: Coffee Maker (100), Blender (150), Wall Art (120), Floor Rug (150), E-reader (200)
-        assertEquals(5, dtos.size());
-        dtos.forEach(dto -> {
-            double price = dto.price();
-            assertEquals(true, price >= min && price <= max,
-                "Price " + price + " should be within range [" + min + ", " + max + "]");
-        });
-    }
-
-    @Test
-    public void testGetProductsByPriceRangeOutsideRange() {
-        double min = 0.01;
-        double max = 19.99;
-        List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
-        assertEquals(0, dtos.size());
-    }
-
-    // The following tests require that 'lenient' be used for mocking in the setup since findAll isn't called.
-    // Could setup the mock data for each test that needs it (redundant) or combine these into existing tests that do call it 
-    // and enforce strictness but that breaks the granularity of the tests.
-    @Test
-    public void testGetProductsByPriceRangeInvalidRange() {
-        assertThrows(IllegalArgumentException.class, () ->
-            productService.getProductsByPriceRange(200.0, 100.0));
-    }
-
-    @Test
-    public void testGetProductsByPriceRangeNegativePrice() {
-        assertThrows(IllegalArgumentException.class, () ->
-            productService.getProductsByPriceRange(-10.0, 100.0),
-            "Should throw IllegalArgumentException for negative prices");
-    }
-
-    // Additional tests for pagination by category
+    // Category Pagination tests
     @Test
     public void testGetProductsByCategoryPaginated() {
         // page 0, size 2 -> first two Electronics (based on mock order)
@@ -175,6 +122,141 @@ public class ProductServiceTest {
             productService.getProductsByCategory("Electronics", -1, 2));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
             productService.getProductsByCategory("Electronics", 0, 0));
+    }
+
+    @Test
+    public void testGetProductsByPriceRangeWithinRange() {
+        double min = 100.0;
+        double max = 200.0;
+        List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
+        // From the mock data: Coffee Maker (100), Blender (150), Wall Art (120), Floor Rug (150), E-reader (200)
+        assertEquals(5, dtos.size());
+        dtos.forEach(dto -> {
+            double price = dto.price();
+            assertEquals(true, price >= min && price <= max,
+                "Price " + price + " should be within range [" + min + ", " + max + "]");
+        });
+    }
+
+    @Test
+    public void testGetProductsByPriceRangeOutsideRange() {
+        double min = 0.01;
+        double max = 19.99;
+        List<ProductDTO> dtos = productService.getProductsByPriceRange(min, max);
+        assertEquals(0, dtos.size());
+    }
+
+    @Test
+    public void testGetProductsByPriceRangeInvalidRange() {
+        assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(200.0, 100.0));
+    }
+
+    @Test
+    public void testGetProductsByPriceRangeNegativePrice() {
+        assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(-10.0, 100.0),
+            "Should throw IllegalArgumentException for negative prices");
+    }
+
+    // Pagination tests for price range
+    @Test
+    public void testGetProductsByPriceRangePaginated() {
+        // Products in range [100, 200]: Coffee Maker (100), Blender (150), Wall Art (120), Floor Rug (150), E-reader (200)
+        // 5 products total; page 0 with size 2 -> first 2
+        List<ProductDTO> page0 = productService.getProductsByPriceRange(100.0, 200.0, 0, 2);
+        assertEquals(2, page0.size());
+        page0.forEach(dto -> {
+            double price = dto.price();
+            assertEquals(true, price >= 100.0 && price <= 200.0);
+        });
+
+        // page 1 with size 2 -> next 2
+        List<ProductDTO> page1 = productService.getProductsByPriceRange(100.0, 200.0, 1, 2);
+        assertEquals(2, page1.size());
+        page1.forEach(dto -> {
+            double price = dto.price();
+            assertEquals(true, price >= 100.0 && price <= 200.0);
+        });
+
+        // page 2 with size 2 -> remaining 1
+        List<ProductDTO> page2 = productService.getProductsByPriceRange(100.0, 200.0, 2, 2);
+        assertEquals(1, page2.size());
+        page2.forEach(dto -> {
+            double price = dto.price();
+            assertEquals(true, price >= 100.0 && price <= 200.0);
+        });
+    }
+
+    @Test
+    public void testGetProductsByPriceRangePaginatedOutOfRange() {
+        // page 10 with size 2 -> empty
+        List<ProductDTO> pageOutOfRange = productService.getProductsByPriceRange(100.0, 200.0, 10, 2);
+        assertEquals(0, pageOutOfRange.size());
+    }
+
+    @Test
+    public void testGetProductsByPriceRangePaginatedInvalidParameters() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(100.0, 200.0, -1, 2));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(100.0, 200.0, 0, 0));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(-10.0, 200.0, 0, 2));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByPriceRange(200.0, 100.0, 0, 2));
+    }
+
+    @Test
+    public void testGetProductsByAvailabilityAvailable() {
+        List<ProductDTO> dtos = productService.getProductsByAvailability(true);
+        // From mock data: 14 products are available
+        assertEquals(14, dtos.size());
+        dtos.forEach(dto -> assertEquals(true, dto.available(),
+            "All returned products should be available"));
+    }
+
+    @Test
+    public void testGetProductsByAvailabilityUnavailable() {
+        List<ProductDTO> dtos = productService.getProductsByAvailability(false);
+        // From mock data: 6 products are unavailable
+        assertEquals(6, dtos.size());
+        dtos.forEach(dto -> assertEquals(false, dto.available(),
+            "All returned products should be unavailable"));
+    }
+
+    // Pagination tests for availability
+    @Test
+    public void testGetProductsByAvailabilityPaginated() {
+        // 14 available products; page 0 with size 5 -> first 5
+        List<ProductDTO> page0 = productService.getProductsByAvailability(true, 0, 5);
+        assertEquals(5, page0.size());
+        page0.forEach(dto -> assertEquals(true, dto.available()));
+
+        // page 1 with size 5 -> next 5
+        List<ProductDTO> page1 = productService.getProductsByAvailability(true, 1, 5);
+        assertEquals(5, page1.size());
+        page1.forEach(dto -> assertEquals(true, dto.available()));
+
+        // page 2 with size 5 -> remaining 4
+        List<ProductDTO> page2 = productService.getProductsByAvailability(true, 2, 5);
+        assertEquals(4, page2.size());
+        page2.forEach(dto -> assertEquals(true, dto.available()));
+    }
+
+    @Test
+    public void testGetProductsByAvailabilityPaginatedOutOfRange() {
+        // there are 6 unavailable products; page 10 with size 2 -> empty
+        List<ProductDTO> pageOutOfRange = productService.getProductsByAvailability(false, 10, 2);
+        assertEquals(0, pageOutOfRange.size());
+    }
+
+    @Test
+    public void testGetProductsByAvailabilityPaginatedInvalidParameters() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByAvailability(true, -1, 2));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () ->
+            productService.getProductsByAvailability(true, 0, 0));
     }
 
 }
