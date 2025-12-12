@@ -9,6 +9,8 @@ Add a product update feature that allows users to perform basic update actions (
 
 Copilot is where my comfort level and experience lies. At my prior company we had to use it exclusively, therefore it would be my initial goto for no other reason than that. Copilot is great for existing project/IDE integration and inline code completion which provided the flexibility we needed for working on the numerous/different projects we aligned with. It may not be the right choice for more AI-forward initiatives and there are plenty of solutions available that are potentially better suited.
 
+Overall the choice could be dictated by requirements such as those you've provided within for this challenge such as - does it excel at generating via comprehensive prompting or would a collaborative approach be better? Considering the context window may also be a factor given codebase size and how it will be used. An argument could also be made for using multiple tools leveraging strenghts of each for the desired purpose.
+
 ## 2. Comprehensive Prompt
 
 **Write your complete prompt including context about the codebase architecture and any constraints:**
