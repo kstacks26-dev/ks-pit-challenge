@@ -2,8 +2,6 @@ package com.access.productInventoryTracker.repository;
 
 import com.access.productInventoryTracker.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -12,24 +10,34 @@ import java.util.List;
  */
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    @Query(value = "SELECT * FROM product p " +
-                   "WHERE p.category = '" + ":#{#category}" + "' " +
-                   "AND p.available = true " +
-                   "ORDER BY p.price DESC",
-           nativeQuery = true)
-    List<Product> findProductsByCategory(@Param("category") String category);
+    /**
+     * Find all products by category (case-insensitive), available status, ordered by price descending.
+     *
+     * @param category the product category
+     * @return list of available products in the specified category, sorted by price descending
+     */
+    List<Product> findByCategoryIgnoreCaseAndAvailableTrueOrderByPriceDesc(String category);
 
-    @Query(value = "SELECT * FROM product p " +
-                   "WHERE p.available = " + ":#{#availability}" + " " +
-                   "ORDER BY p.price DESC",
-           nativeQuery = true)
-    List<Product> findProductsByAvailability(@Param("availability") boolean availability);
+    /**
+     * Find all available products ordered by price descending.
+     *
+     * @return list of available products sorted by price descending
+     */
+    List<Product> findByAvailableTrueOrderByPriceDesc();
 
-    @Query(value = "SELECT * FROM product p " +
-                   "WHERE p.price >= " + ":#{#min}" + " " +
-                   "AND p.price <= " + ":#{#max}" + " " +
-                   "ORDER BY p.price DESC",
-           nativeQuery = true)
-    List<Product> findProductsByPriceRange(@Param("min") double min, @Param("max") double max);
+    /**
+     * Find all unavailable products ordered by price descending.
+     *
+     * @return list of unavailable products sorted by price descending
+     */
+    List<Product> findByAvailableFalseOrderByPriceDesc();
 
+    /**
+     * Find all products within a price range ordered by price descending.
+     *
+     * @param minPrice the minimum price (inclusive)
+     * @param maxPrice the maximum price (inclusive)
+     * @return list of products within the price range, sorted by price descending
+     */
+    List<Product> findByPriceBetweenOrderByPriceDesc(double minPrice, double maxPrice);
 }

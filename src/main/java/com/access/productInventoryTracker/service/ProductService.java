@@ -66,6 +66,7 @@ public class ProductService {
             throw new IllegalArgumentException("Minimum price (" + min + ") cannot exceed maximum price (" + max + ")");
         }
 
+        // Intentionally not catching DataAccessExceptions in these methods
         return productRepository.findAll().stream()
             .filter(p -> p.getPrice() >= min && p.getPrice() <= max)
             .map(this::convertToDTO)

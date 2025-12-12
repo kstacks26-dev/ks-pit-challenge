@@ -29,10 +29,25 @@ public class Product {
     @Column(nullable = false)
     private boolean available;
 
+    /**
+     * Default constructor for JPA.
+     */
+    public Product() {
+    }
+
+    /**
+     * Constructor with all fields.
+     *
+     * @param id        the product ID
+     * @param name      the product name (cannot be null)
+     * @param price     the product price (cannot be negative)
+     * @param category  the product category (cannot be null)
+     * @param available the availability status
+     */
     public Product(Long id, String name, double price, String category, boolean available) {
         this.id = id;
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.price = price;
+        setPrice(price); // Use setter for validation
         this.category = Objects.requireNonNull(category, "category cannot be null");
         this.available = available;
     }
