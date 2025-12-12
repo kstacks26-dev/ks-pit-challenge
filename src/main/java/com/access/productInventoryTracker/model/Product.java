@@ -1,18 +1,23 @@
 package com.access.productInventoryTracker.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Column;
 
-@Entity  // This tells Hibernate to make a table out of this class
+import java.util.Objects;
+
+/**
+ * Product entity representing a product in inventory.
+ */
+@Entity
 public class Product {
-    @Id  // This marks the id as the primary key
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // This defines the primary key generation strategy
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false) // specifies that the column should not be null
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
@@ -24,21 +29,29 @@ public class Product {
     @Column(nullable = false)
     private boolean available;
 
-    // Default constructor
+    /**
+     * Default constructor for JPA.
+     */
     public Product() {
-
     }
 
-    // Constructor with parameters
+    /**
+     * Constructor with all fields.
+     *
+     * @param id        the product ID
+     * @param name      the product name (cannot be null)
+     * @param price     the product price (cannot be negative)
+     * @param category  the product category (cannot be null)
+     * @param available the availability status
+     */
     public Product(Long id, String name, double price, String category, boolean available) {
         this.id = id;
-        this.name = name;
-        this.price = price;
-        this.category = category;
+        this.name = Objects.requireNonNull(name, "name cannot be null");
+        setPrice(price); // Use setter for validation
+        this.category = Objects.requireNonNull(category, "category cannot be null");
         this.available = available;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -52,7 +65,7 @@ public class Product {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name cannot be null");
     }
 
     public double getPrice() {
@@ -60,6 +73,9 @@ public class Product {
     }
 
     public void setPrice(double price) {
+        if (price < 0) {
+            throw new IllegalArgumentException("Price cannot be negative: " + price);
+        }
         this.price = price;
     }
 
@@ -68,7 +84,7 @@ public class Product {
     }
 
     public void setCategory(String category) {
-        this.category = category;
+        this.category = Objects.requireNonNull(category, "category cannot be null");
     }
 
     public boolean isAvailable() {
@@ -79,7 +95,6 @@ public class Product {
         this.available = available;
     }
 
-    // toString method for debugging
     @Override
     public String toString() {
         return "Product{" +
@@ -89,5 +104,22 @@ public class Product {
                 ", category='" + category + '\'' +
                 ", available=" + available +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Product product = (Product) obj;
+        return Double.compare(product.price, price) == 0 &&
+               available == product.available &&
+               Objects.equals(id, product.id) &&
+               Objects.equals(name, product.name) &&
+               Objects.equals(category, product.category);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, price, category, available);
     }
 }
